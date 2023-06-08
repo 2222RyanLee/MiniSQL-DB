@@ -1,55 +1,52 @@
 # MiniSQL
 
+This framework is a modified version based on the CMU-15445 BusTub framework. It retains some core design principles of the buffer pool, index, and record modules, while making some modifications and extensions to make it compatible with the requirements of the original MiniSQL lab guide.
 
-本框架参考CMU-15445 BusTub框架进行改写，在保留了缓冲池、索引、记录模块的一些核心设计理念的基础上，做了一些修改和扩展，使之兼容于原MiniSQL实验指导的要求。
-以下列出了改动/扩展较大的几个地方：
-- 对Disk Manager模块进行改动，扩展了位图页、磁盘文件元数据页用于支持持久化数据页分配回收状态；
-- 在Record Manager, Index Manager, Catalog Manager等模块中，通过对内存对象的序列化和反序列化来持久化数据；
-- 对Record Manager层的一些数据结构（`Row`、`Field`、`Schema`、`Column`等）和实现进行重构；
-- 对Catalog Manager层进行重构，支持持久化并为Executor层提供接口调用;
-- 扩展了Parser层，Parser层支持输出语法树供Executor层调用；
+The following are the major modifications/extensions:
 
-此外还涉及到很多零碎的改动，包括源代码中部分模块代码的调整，测试代码的修改，性能上的优化等，在此不做赘述。
+- Modified the Disk Manager module to support persistent data page allocation and deallocation status by extending bitmap pages and disk file metadata pages.
+- Implemented data persistence by serializing and deserializing memory objects in modules such as Record Manager, Index Manager, and Catalog Manager.
+- Refactored data structures (`Row`, `Field`, `Schema`, `Column`, etc.) and implementations in the Record Manager layer.
+- Restructured the Catalog Manager layer to support persistence and provide interface calls for the Executor layer.
+- Expanded the Parser layer to support outputting syntax trees for Executor layer invocation.
 
+In addition, there are many miscellaneous changes, including adjustments to some module code in the source code, modifications to test code, performance optimizations, etc., which are not elaborated here.
 
-注意：为了避免代码抄袭，请不要将自己的代码发布到任何公共平台中。
+Note: To avoid code plagiarism, please do not publish your code on any public platform.
 
-### 编译&开发环境
-- Apple clang version: 11.0+ (MacOS)，使用`gcc --version`和`g++ --version`查看
-- gcc & g++ : 8.0+ (Linux)，使用`gcc --version`和`g++ --version`查看
-- cmake: 3.20+ (Both)，使用`cmake --version`查看
-- gdb: 7.0+ (Optional)，使用`gdb --version`查看
-- flex & bison (暂时不需要安装，但如果需要对SQL编译器的语法进行修改，需要安装）
-- llvm-symbolizer (暂时不需要安装)
-    - in mac os `brew install llvm`, then set path and env variables.
-    - in centos `yum install devtoolset-8-libasan-devel libasan`
-    - https://www.jetbrains.com/help/clion/google-sanitizers.html#AsanChapter
-    - https://www.jianshu.com/p/e4cbcd764783
+### Compilation & Development Environment
+- Apple clang version: 11.0+ (MacOS), use `gcc --version` and `g++ --version` to check
+- gcc & g++: 8.0+ (Linux), use `gcc --version` and `g++ --version` to check
+- cmake: 3.20+ (Both), use `cmake --version` to check
+- gdb: 7.0+ (Optional), use `gdb --version` to check
+- flex & bison (not required for now, but needed if you want to modify the syntax of the SQL compiler)
+- llvm-symbolizer (not required for now)
+  - For macOS: `brew install llvm`, then set the path and environment variables.
+  - For CentOS: `yum install devtoolset-8-libasan-devel libasan`
+  - Reference: [Google sanitizers with CLion](https://www.jetbrains.com/help/clion/google-sanitizers.html#AsanChapter), [Chinese blog post](https://www.jianshu.com/p/e4cbcd764783)
 
-### 构建
+### Build
 #### Windows
-目前该代码暂不支持在Windows平台上的编译。但在Win10及以上的系统中，可以通过安装WSL（Windows的Linux子系统）来进行
-开发和构建。WSL请选择Ubuntu子系统（推荐Ubuntu20及以上）。如果你使用Clion作为IDE，可以在Clion中配置WSL从而进行调试，具体请参考
-[Clion with WSL](https://blog.jetbrains.com/clion/2018/01/clion-and-linux-toolchain-on-windows-are-now-friends/)
+Currently, this code does not support compilation on the Windows platform. However, on Windows 10 and above, you can use the Windows Subsystem for Linux (WSL) to develop and build. Choose the Ubuntu subsystem for WSL (Ubuntu 20 or above is recommended). If you use CLion as your IDE, you can configure WSL in CLion for debugging. For details, please refer to [Clion with WSL](https://blog.jetbrains.com/clion/2018/01/clion-and-linux-toolchain-on-windows-are-now-friends/).
 
 #### MacOS & Linux & WSL
-基本构建命令
+Basic build commands:
 ```bash
 mkdir build
 cd build
 cmake ..
 make -j
 ```
-若不涉及到`CMakeLists`相关文件的变动且没有新增或删除`.cpp`代码（通俗来说，就是只是对现有代码做了修改）
-则无需重新执行`cmake..`命令，直接执行`make -j`编译即可。
+If there are no changes to the `CMakeLists` related files and no new or deleted `.cpp` code (in other words, only modifications to existing code), there is no need to execute the `cmake ..` command again. Just execute `make -j` to compile.
 
-默认以`debug`模式进行编译，如果你需要使用`release`模式进行编译：
+The default compilation mode is `debug`. If you want to compile in `release` mode, use the following command:
 ```bash
 cmake -DCMAKE_BUILD_TYPE=Release ..
 ```
 
-### 测试
-在构建后，默认会在`build/test`目录下生成`minisql_test`的可执行文件，通过`./minisql_test`即可运行所有测试。
+### Testing
+After building, the `minisql_test` executable will be generated in the `build/test` directory. Run `./minisql_test` to execute all tests.
 
-如果需要运行单个测试，例如，想要运行`lru_replacer_test.cpp`对应的测试文件，可以通过`make lru_replacer_test`
-命令进行构建。
+To run a single test, for example
+
+, if you want to run the test file corresponding to `lru_replacer_test.cpp`, use the command `make lru_replacer_test` to build it.
